@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Interaction Recorder</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #controls { margin-bottom: 20px; }
+    button { margin-left: 10px; }
+    #interactions { list-style: none; padding: 0; }
+    .interaction { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; }
+    .screenshot { width: 100px; height: auto; margin-right: 10px; }
+    .details { flex: 1; }
+    .details div { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="text" id="url-input" placeholder="Enter URL" size="50" />
+    <button id="start-btn">Start</button>
+    <button id="stop-btn" disabled>Stop</button>
+  </div>
+  <ul id="interactions"></ul>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "rpa-interaction-recorder",
+  "version": "1.0.0",
+  "description": "Electron app to record user interactions using Selenium",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "install:chrome": "browser-driver-manager install chrome"
+  },
+  "dependencies": {
+    "browser-driver-manager": "^2.0.1",
+    "dotenv": "^16.5.0",
+    "electron": "^24.0.0",
+    "selenium-webdriver": "^4.0.0"
+  }
+}
