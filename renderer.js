@@ -1,4 +1,9 @@
 const { ipcRenderer } = require('electron');
+const { initializeTranslator } = require('./translator/robot-translator');
+let interactionsData = [];
+let translator;
+const demoFlag = true;
+const verifyFlag = true;
 
 const urlInput = document.getElementById('url-input');
 const startBtn = document.getElementById('start-btn');
@@ -14,15 +19,33 @@ startBtn.addEventListener('click', () => {
   startBtn.disabled = true;
   stopBtn.disabled = false;
   ipcRenderer.send('start-tracking', url);
+  translator = initializeTranslator('SeleniumLibrary', 'testing');
+  interactionsData = [];
+  document.getElementById('robot-output').textContent = '';
 });
 
 stopBtn.addEventListener('click', () => {
   stopBtn.disabled = true;
   startBtn.disabled = false;
   ipcRenderer.send('stop-tracking');
+  const mappedData = interactionsData.map(d => ({
+    type: d.type === 'input' ? 'text' : d.type,
+    path: d.selector,
+    value: d.value
+  }));
+  const script = translator.generateOutput(mappedData, mappedData.length, demoFlag, verifyFlag);
+  document.getElementById('robot-output').textContent = script;
 });
 
 ipcRenderer.on('interaction', (event, data) => {
+  interactionsData.push(data);
+  const mappedData = interactionsData.map(d => ({
+    type: d.type === 'input' ? 'text' : d.type,
+    path: d.selector,
+    value: d.value
+  }));
+  const script = translator.generateOutput(mappedData, mappedData.length, demoFlag, verifyFlag);
+  document.getElementById('robot-output').textContent = script;
   const li = document.createElement('li');
   li.className = 'interaction';
 
