@@ -1,0 +1,49 @@
+/build
+/dist_app
+node_modules
+
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+
+pids
+logs
+tmp
+
+# Coverage reports
+coverage
+
+# API keys and secrets
+.env
+
+.nyc_output
+
+# Editors
+.idea
+*.iml
+*.vscode
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore output from coverage report
+coverageerence/dt
+
+*___jb_tmp___
+typings.json
+typings
+
+bin/*.txt
+bin/*.mat
+
+.env
+*-function.json
+test-report.xml
+.qodo
