@@ -47,3 +47,5 @@ bin/*.mat
 *-function.json
 test-report.xml
 .qodo
+
+/recordings

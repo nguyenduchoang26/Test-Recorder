@@ -94,3 +94,10 @@ ipcRenderer.on('interaction', (event, data) => {
   li.append(img, details);
   interactionsList.appendChild(li);
 });
+
+ipcRenderer.on('save-complete', (event, savePath) => {
+  const msgDiv = document.createElement('div');
+  msgDiv.textContent = `Saved interactions to: ${savePath}`;
+  msgDiv.style.marginTop = '10px';
+  document.getElementById('controls').appendChild(msgDiv);
+});

@@ -5,6 +5,7 @@
  */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { Builder } = require('selenium-webdriver');
 require('dotenv').config({ path: path.resolve(require('os').homedir(), '.browser-driver-manager/.env') });
 console.log(process.env.CHROMEDRIVER_TEST_PATH);
@@ -12,6 +13,8 @@ console.log(process.env.CHROMEDRIVER_TEST_PATH);
 let mainWindow;
 let driver;
 let pollInterval;
+let savePath;
+let actionCounter = 0;
 
 /**
  * Creates the main application window with predefined dimensions
@@ -38,6 +41,10 @@ app.whenReady().then(createWindow);
  * and starts polling for events.
  */
 ipcMain.on('start-tracking', async (event, url) => {
+  const timestamp = new Date().toISOString().replace(/:/g, '_');
+  savePath = path.join(__dirname, 'recordings', timestamp);
+  fs.mkdirSync(savePath, { recursive: true });
+  actionCounter = 0;
   driver = await new Builder().forBrowser('chrome').build();
   await driver.get(url);
   await driver.executeScript(function() {
@@ -67,7 +74,16 @@ ipcMain.on('start-tracking', async (event, url) => {
         return events;
       `);
       for (const info of interactions) {
+        actionCounter++;
+        const seq = actionCounter;
         const screenshot = await driver.takeScreenshot();
+        const screenshotPath = path.join(savePath, `screenshot-${seq}.png`);
+        fs.writeFileSync(screenshotPath, Buffer.from(screenshot, 'base64'));
+        const pageSource = await driver.getPageSource();
+        const domPath = path.join(savePath, `dom-${seq}.html`);
+        fs.writeFileSync(domPath, pageSource, 'utf-8');
+        const actionPath = path.join(savePath, `action-${seq}.json`);
+        fs.writeFileSync(actionPath, JSON.stringify(info, null, 2), 'utf-8');
         mainWindow.webContents.send('interaction', { ...info, screenshot });
       }
     } catch (err) {
@@ -87,6 +103,7 @@ ipcMain.on('stop-tracking', async () => {
   if (driver) {
     await driver.quit();
   }
+  mainWindow.webContents.send('save-complete', savePath);
 });
 
 /**
