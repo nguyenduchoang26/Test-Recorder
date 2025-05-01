@@ -1,8 +1,23 @@
-/* global builder locator classifier Node */
+/**
+ * scanner.js - Traverses the DOM to locate and classify elements for recording.
+ * Exports methods to parse nodes into classification hashes with locator paths.
+ *
+ * Global dependencies: builder, locator, classifier, Node
+ */
+ /* global builder locator classifier Node */
 
 const scanner = {
   limit: 1000,
 
+  /**
+   * Recursively traverse the DOM starting at 'root', classify matching elements,
+   * and build locator paths up to a specified limit.
+   *
+   * @param {Array<Object>} array - Collector for classification hashes.
+   * @param {Node} root - Root element to start parsing from.
+   * @param {Array<string>} attributesArray - Attributes list for path construction.
+   * @returns {Array<Object>} Array of classification hashes with locator paths.
+   */
   parseNodes(array, root, attributesArray) {
     this.limit = this.limit - 1;
     if ((this.limit <= 0) || (root === undefined)) {
@@ -28,6 +43,14 @@ const scanner = {
     return array;
   },
 
+  /**
+   * Parse a single node into a classification hash and locator path.
+   *
+   * @param {string} time - Timestamp for the event.
+   * @param {Node} node - The DOM node to parse.
+   * @param {Array<string>} attributesArray - Attributes list for path construction.
+   * @returns {Object} Classification hash including time and locator path.
+   */
   parseNode(time, node, attributesArray) {
     /* FIXME: add handling for if hasattribute shadowroot */
     if (node !== undefined) {

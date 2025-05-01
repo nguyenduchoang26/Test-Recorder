@@ -1,3 +1,8 @@
+/**
+ * main.js - Electron main process.
+ * Initializes the application window, manages Selenium WebDriver,
+ * records user interactions, and communicates with the renderer.
+ */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { Builder } = require('selenium-webdriver');
@@ -8,6 +13,10 @@ let mainWindow;
 let driver;
 let pollInterval;
 
+/**
+ * Creates the main application window with predefined dimensions
+ * and web preferences, then loads the UI from index.html.
+ */
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -22,6 +31,12 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
+/**
+ * Handles the 'start-tracking' IPC event from renderer.
+ * Launches Selenium WebDriver for Chrome, navigates to the provided URL,
+ * injects event listeners into the page to record interactions,
+ * and starts polling for events.
+ */
 ipcMain.on('start-tracking', async (event, url) => {
   driver = await new Builder().forBrowser('chrome').build();
   await driver.get(url);
@@ -61,6 +76,10 @@ ipcMain.on('start-tracking', async (event, url) => {
   }, 250);
 });
 
+/**
+ * Handles the 'stop-tracking' IPC event.
+ * Clears polling interval and shuts down the WebDriver.
+ */
 ipcMain.on('stop-tracking', async () => {
   if (pollInterval) {
     clearInterval(pollInterval);
@@ -70,6 +89,9 @@ ipcMain.on('stop-tracking', async () => {
   }
 });
 
+/**
+ * Quit the app when all windows are closed, except on macOS.
+ */
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

@@ -1,3 +1,8 @@
+/**
+ * renderer.js - Electron renderer process.
+ * Manages UI, IPC events for interaction tracking,
+ * updates DOM with event details and screenshots, and initiates script translation.
+ */
 const { ipcRenderer } = require('electron');
 const { initializeTranslator } = require('./translator/robot-translator');
 let interactionsData = [];
@@ -10,6 +15,13 @@ const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
 const interactionsList = document.getElementById('interactions');
 
+/**
+ * Handle Start button click:
+ * - Validate URL input
+ * - Disable start button, enable stop button
+ * - Send 'start-tracking' IPC event to main process
+ * - Initialize translator and clear previous data
+ */
 startBtn.addEventListener('click', () => {
   const url = urlInput.value;
   if (!url) {
@@ -24,6 +36,13 @@ startBtn.addEventListener('click', () => {
   document.getElementById('robot-output').textContent = '';
 });
 
+/**
+ * Handle Stop button click:
+ * - Disable stop button, enable start button
+ * - Send 'stop-tracking' IPC event to main process
+ * - Map collected interaction data to translator format
+ * - Generate output script and display in the UI
+ */
 stopBtn.addEventListener('click', () => {
   stopBtn.disabled = true;
   startBtn.disabled = false;
@@ -37,6 +56,12 @@ stopBtn.addEventListener('click', () => {
   document.getElementById('robot-output').textContent = script;
 });
 
+/**
+ * Receive 'interaction' IPC event from main process:
+ * - Append new interaction data to array
+ * - Regenerate translated script and update output area
+ * - Create list item with screenshot and details in the UI
+ */
 ipcRenderer.on('interaction', (event, data) => {
   interactionsData.push(data);
   const mappedData = interactionsData.map(d => ({

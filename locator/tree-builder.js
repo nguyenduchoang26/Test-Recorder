@@ -1,3 +1,7 @@
+/**
+ * tree-builder.js - Builds hierarchical attribute trees for DOM elements.
+ * Provides methods to construct structured attribute lists from an element up to the document root.
+ */
 /* global Node */
 
 /* builder constructs an array of element and its parents
@@ -40,7 +44,6 @@ const builder = {
         attr = element.className.length > 0 ? element.className.split(' ') : [];
       } else if (sel === 'index') {
         attr = 1;
-        // TODO: why is this commented?
         // attr = this._getIndex(element);
       } else { // name, id, for, href, title
         attr = element.getAttribute(sel);

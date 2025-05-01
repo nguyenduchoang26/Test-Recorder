@@ -1,3 +1,10 @@
+/**
+ * classifier.js - Classifies a DOM element into a type and extracts its value.
+ * Supports various input types, textarea, select, and links.
+ *
+ * @param {HTMLElement} element - The DOM element to classify.
+ * @returns {{type: string, value: any}|null} Classification object or null if unsupported.
+ */
 function classifier(element) {
   let hash = null;
   const tag = element.tagName.toLowerCase();

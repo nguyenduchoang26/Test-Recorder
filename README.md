@@ -1,24 +1,20 @@
 # Architecture Diagram
 
-## Summary
-The repository is an Electron-based application designed to record user interactions on a webpage using Selenium WebDriver.
+## Overview
+The application is an Electron-based desktop recorder that captures user interactions on a webpage using Selenium WebDriver and translates them into Robot Framework scripts.
 
-### Purpose
-The app records user interactions (clicks, inputs, scrolls) on a webpage and displays them in the UI along with screenshots.
-
-### Key Components
-1. **Electron**: Provides the desktop application framework.
-2. **Selenium WebDriver**: Automates browser interactions and captures events.
-3. **HTML/CSS**: Defines the UI structure and styling.
-4. **JavaScript**:
-   - `main.js`: Handles Electron's main process, initializes the Selenium WebDriver, and communicates with the renderer process.
-   - `renderer.js`: Manages the UI, listens for user actions, and displays recorded interactions.
+### Architecture Details
+- **Electron Main Process (main.js)**: Creates the BrowserWindow, initializes Selenium WebDriver, injects event listeners into the page, polls for interaction events, and forwards them via IPC to the renderer.
+- **Electron Renderer Process (renderer.js)**: Manages the UI lifecycle, handles Start/Stop commands, receives interaction events, updates the DOM with screenshots and details, and invokes the translator to generate Robot scripts.
+- **Locator Modules (`locator/`)**: Analyze DOM elements, classify input types, and build robust XPath selectors for accurate element identification.
+- **Scanner (`locator/scanner.js`)**: Traverses the DOM tree to collect element attributes and generate locator paths.
+- **Translator (`translator/robot-translator.js`)**: Converts recorded interactions into executable Robot Framework test or task scripts, supporting both SeleniumLibrary and RFBrowser syntaxes.
 
 ### Dependencies
-- `electron`: Framework for building the desktop app.
-- `selenium-webdriver`: Library for browser automation.
-- `browser-driver-manager`: Manages browser drivers.
-- `dotenv`: Loads environment variables.
+- `electron`: Desktop application framework
+- `selenium-webdriver`: Browser automation library
+- `browser-driver-manager`: Manages WebDriver binaries
+- `dotenv`: Loads environment variables for WebDriver configuration
 
 ## Architecture Diagram
 ```mermaid
