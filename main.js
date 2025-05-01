@@ -6,7 +6,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { Builder } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 require('dotenv').config({ path: path.resolve(require('os').homedir(), '.browser-driver-manager/.env') });
 console.log(process.env.CHROMEDRIVER_TEST_PATH);
 
@@ -76,20 +76,31 @@ ipcMain.on('start-tracking', async (event, url) => {
       for (const info of interactions) {
         actionCounter++;
         const seq = actionCounter;
-        const screenshot = await driver.takeScreenshot();
-        const screenshotPath = path.join(savePath, `screenshot-${seq}.png`);
-        fs.writeFileSync(screenshotPath, Buffer.from(screenshot, 'base64'));
+        // capture full-page screenshot
+        const screenshotFull = await driver.takeScreenshot();
+        const screenshotFullPath = path.join(savePath, `screenshot-full-${seq}.png`);
+        fs.writeFileSync(screenshotFullPath, Buffer.from(screenshotFull, 'base64'));
+        // capture element-only screenshot with fallback
+        let screenshotElement;
+        try {
+          const elem = await driver.findElement(By.css(info.selector));
+          screenshotElement = await elem.takeScreenshot();
+        } catch (err) {
+          screenshotElement = screenshotFull;
+        }
+        const screenshotElemPath = path.join(savePath, `screenshot-elem-${seq}.png`);
+        fs.writeFileSync(screenshotElemPath, Buffer.from(screenshotElement, 'base64'));
         const pageSource = await driver.getPageSource();
         const domPath = path.join(savePath, `dom-${seq}.html`);
         fs.writeFileSync(domPath, pageSource, 'utf-8');
         const actionPath = path.join(savePath, `action-${seq}.json`);
         fs.writeFileSync(actionPath, JSON.stringify(info, null, 2), 'utf-8');
-        mainWindow.webContents.send('interaction', { ...info, screenshot });
+        mainWindow.webContents.send('interaction', { ...info, screenshotFull, screenshotElement });
       }
     } catch (err) {
       console.error(err);
     }
-  }, 250);
+  }, 10);
 });
 
 /**

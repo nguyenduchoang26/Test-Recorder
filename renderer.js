@@ -74,9 +74,14 @@ ipcRenderer.on('interaction', (event, data) => {
   const li = document.createElement('li');
   li.className = 'interaction';
 
-  const img = document.createElement('img');
-  img.className = 'screenshot';
-  img.src = `data:image/png;base64,${data.screenshot}`;
+  // full-page screenshot
+  const imgFull = document.createElement('img');
+  imgFull.className = 'screenshot-full';
+  imgFull.src = `data:image/png;base64,${data.screenshotFull}`;
+  // element-only screenshot
+  const imgElem = document.createElement('img');
+  imgElem.className = 'screenshot-elem';
+  imgElem.src = `data:image/png;base64,${data.screenshotElement}`;
 
   const details = document.createElement('div');
   details.className = 'details';
@@ -91,7 +96,7 @@ ipcRenderer.on('interaction', (event, data) => {
   timeDiv.textContent = `Timestamp: ${data.timestamp}`;
 
   details.append(selectorDiv, textDiv, valueDiv, timeDiv);
-  li.append(img, details);
+li.append(imgElem, imgFull, details);
   interactionsList.appendChild(li);
 });
 
