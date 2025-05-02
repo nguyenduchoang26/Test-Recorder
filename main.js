@@ -56,7 +56,8 @@ ipcMain.on('start-tracking', async (event, url) => {
           selector: e.target.tagName + (e.target.id ? '#' + e.target.id : '') + (e.target.className ? '.' + e.target.className.split(' ').join('.') : ''),
           text: e.target.innerText || null,
           value: e.target.value || null,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          rect: e.target.getBoundingClientRect()
         };
         window.interactions.push(info);
       } catch (err) {}
@@ -86,7 +87,21 @@ ipcMain.on('start-tracking', async (event, url) => {
           const elem = await driver.findElement(By.css(info.selector));
           screenshotElement = await elem.takeScreenshot();
         } catch (err) {
-          screenshotElement = screenshotFull;
+          const sharp = require("sharp");
+          const buffer = Buffer.from(screenshotFull, 'base64');
+          try {
+            const croppedBuffer = await sharp(buffer)
+              .extract({
+                left: Math.round(info.rect.left),
+                top: Math.round(info.rect.top),
+                width: Math.round(info.rect.width),
+                height: Math.round(info.rect.height)
+              })
+              .toBuffer();
+            screenshotElement = croppedBuffer.toString('base64');
+          } catch (innerErr) {
+            screenshotElement = screenshotFull;
+          }
         }
         const screenshotElemPath = path.join(savePath, `screenshot-elem-${seq}.png`);
         fs.writeFileSync(screenshotElemPath, Buffer.from(screenshotElement, 'base64'));
