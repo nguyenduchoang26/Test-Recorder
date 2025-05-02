@@ -2,32 +2,40 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Interaction Recorder</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    #controls { margin-bottom: 20px; }
-    button { margin-left: 10px; }
-    #interactions { list-style: none; padding: 0; }
-    .interaction { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; }
-    .screenshot { width: 100px; height: auto; margin-right: 10px; }
-    .screenshot-full, .screenshot-elem { width: 100px; height: auto; margin-right: 10px; }
-    .details { flex: 1; }
-    .details div { margin-bottom: 5px; }
-    #main-container { display: flex; height: calc(100vh - 150px); }
-    #interactions, #robot-output { flex: 1; overflow-y: auto; margin: 10px; }
-    #robot-output { white-space: pre-wrap; border:1px solid #ccc; padding:10px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Recorder</title>
+  <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
+  <h1>Test Recorder</h1>
+  
   <div id="controls">
-    <input type="text" id="url-input" placeholder="Enter URL" size="50" />
-    <button id="start-btn">Start</button>
-    <button id="stop-btn" disabled>Stop</button>
+    <input type="text" id="url-input" placeholder="Enter URL to track">
+    <div class="button-group">
+      <button id="start-btn">Start Tracking</button>
+      <button id="stop-btn" disabled>Stop Tracking</button>
+    </div>
   </div>
-  <div id="main-container">
-    <ul id="interactions"></ul>
-  <pre id="robot-output"></pre>
+  
+  <div id="content">
+    <div id="interactions-container">
+      <h2>Interactions</h2>
+      <ul id="interactions"></ul>
+    </div>
+    
+    <div id="script-container">
+      <h2>Robot Framework Script</h2>
+      <div id="script-controls">
+        <button id="edit-script-btn" disabled>Edit Script</button>
+        <button id="save-script-btn">Save Script</button>
+      </div>
+      <div id="script-output">
+        <pre id="robot-output"></pre>
+        <textarea id="robot-editor"></textarea>
+      </div>
+    </div>
   </div>
-  <script src="renderer.js"></script>
+  
+  <script src="./renderer.js"></script>
 </body>
 </html>

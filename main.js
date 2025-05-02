@@ -32,6 +32,18 @@ let actionCounter = 0;   // Counter to track sequential actions
  * @returns {void}
  */
 function createWindow() {
+  // Ensure styles directory exists
+  const stylesDir = path.join(__dirname, 'styles');
+  if (!fs.existsSync(stylesDir)) {
+    fs.mkdirSync(stylesDir, { recursive: true });
+  }
+  
+  // Create recordings directory if it doesn't exist
+  const recordingsDir = path.join(__dirname, 'recordings');
+  if (!fs.existsSync(recordingsDir)) {
+    fs.mkdirSync(recordingsDir, { recursive: true });
+  }
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -150,6 +162,34 @@ ipcMain.on('stop-tracking', async () => {
     await driver.quit();
   }
   mainWindow.webContents.send('save-complete', savePath);
+});
+
+/**
+ * Handles the 'save-custom-script' IPC event.
+ * Saves the custom Robot Framework script to a file.
+ * 
+ * @event ipcMain#save-custom-script
+ * @param {Event} event - The IPC event object
+ * @param {string} scriptContent - The custom script content to save
+ */
+ipcMain.on('save-custom-script', async (event, scriptContent) => {
+  try {
+    const timestamp = new Date().toISOString().replace(/:/g, '_');
+    const scriptPath = path.join(savePath || path.join(__dirname, 'scripts'), `robot_script_${timestamp}.robot`);
+    
+    // Ensure the directory exists
+    const scriptDir = path.dirname(scriptPath);
+    fs.mkdirSync(scriptDir, { recursive: true });
+    
+    // Write the script to file
+    fs.writeFileSync(scriptPath, scriptContent, 'utf-8');
+    
+    // Notify the renderer process
+    mainWindow.webContents.send('script-saved', scriptPath);
+  } catch (err) {
+    console.error('Error saving custom script:', err);
+    mainWindow.webContents.send('script-save-error', err.message);
+  }
 });
 
 /**
