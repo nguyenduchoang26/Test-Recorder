@@ -1,37 +1,49 @@
 /**
  * main.js - Electron main process.
- * Initializes the application window, manages Selenium WebDriver,
- * records user interactions, and communicates with the renderer.
+ * 
+ * This module initializes the application window, manages Selenium WebDriver,
+ * records user interactions, and communicates with the renderer process.
+ * It handles the core functionality of the test recording system, including:
+ * - Setting up the Electron application window
+ * - Launching and controlling Selenium WebDriver sessions
+ * - Capturing screenshots and DOM snapshots
+ * - Managing the recording workflow and file storage
  */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { Builder, By } = require('selenium-webdriver');
+// Load environmental variables for WebDriver configuration
 require('dotenv').config({ path: path.resolve(require('os').homedir(), '.browser-driver-manager/.env') });
 console.log(process.env.CHROMEDRIVER_TEST_PATH);
 
-let mainWindow;
-let driver;
-let pollInterval;
-let savePath;
-let actionCounter = 0;
+// Global application state variables
+let mainWindow;          // Main application window reference
+let driver;              // Selenium WebDriver instance
+let pollInterval;        // Timer for polling recorded interactions
+let savePath;            // Directory where recordings are stored
+let actionCounter = 0;   // Counter to track sequential actions
 
 /**
  * Creates the main application window with predefined dimensions
  * and web preferences, then loads the UI from index.html.
+ * 
+ * @function createWindow
+ * @returns {void}
  */
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: true,     // Allows direct use of Node.js APIs in renderer
+      contextIsolation: false    // Disables context isolation for IPC communication
     }
   });
   mainWindow.loadFile('index.html');
 }
 
+// Initialize the application window when Electron is ready
 app.whenReady().then(createWindow);
 
 /**
@@ -39,6 +51,11 @@ app.whenReady().then(createWindow);
  * Launches Selenium WebDriver for Chrome, navigates to the provided URL,
  * injects event listeners into the page to record interactions,
  * and starts polling for events.
+ * 
+ * @event ipcMain#start-tracking
+ * @param {Event} event - The IPC event object
+ * @param {string} url - The URL to navigate to and start tracking
+ * @returns {Promise<void>}
  */
 ipcMain.on('start-tracking', async (event, url) => {
   const timestamp = new Date().toISOString().replace(/:/g, '_');
@@ -121,6 +138,9 @@ ipcMain.on('start-tracking', async (event, url) => {
 /**
  * Handles the 'stop-tracking' IPC event.
  * Clears polling interval and shuts down the WebDriver.
+ * 
+ * @event ipcMain#stop-tracking
+ * @returns {Promise<void>}
  */
 ipcMain.on('stop-tracking', async () => {
   if (pollInterval) {
@@ -134,6 +154,8 @@ ipcMain.on('stop-tracking', async () => {
 
 /**
  * Quit the app when all windows are closed, except on macOS.
+ * 
+ * @event app#window-all-closed
  */
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
