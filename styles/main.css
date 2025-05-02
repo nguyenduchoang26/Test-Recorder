@@ -132,6 +132,11 @@ button {
   font-weight: bold;
 }
 
+.info-message {
+  color: #2196F3;
+  font-weight: bold;
+}
+
 /* Media queries for responsive layout */
 @media (max-width: 768px) {
   #content {
@@ -154,4 +159,31 @@ button {
     margin-right: 0;
     margin-bottom: 10px;
   }
+}
+
+#new-session-btn {
+  margin-left: 10px;
+  background-color: #2196F3;
+  color: white;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 5px 0;
+}
+
+/* Add a highlight animation for the new session button */
+@keyframes highlight-button {
+  0% { background-color: #2196F3; }
+  50% { background-color: #0b7dda; }
+  100% { background-color: #2196F3; }
+}
+
+.highlight-button {
+  animation: highlight-button 1s ease-in-out 2;
+}
+
+#messages-container {
+  margin-top: 10px;
 }

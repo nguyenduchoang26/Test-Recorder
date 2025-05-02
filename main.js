@@ -70,6 +70,19 @@ app.whenReady().then(createWindow);
  * @returns {Promise<void>}
  */
 ipcMain.on('start-tracking', async (event, url) => {
+  // Make sure any existing session is properly closed
+  if (driver) {
+    try {
+      await driver.quit();
+    } catch (err) {
+      console.error('Error closing previous WebDriver session:', err);
+    }
+  }
+  
+  if (pollInterval) {
+    clearInterval(pollInterval);
+  }
+  
   const timestamp = new Date().toISOString().replace(/:/g, '_');
   savePath = path.join(__dirname, 'recordings', timestamp);
   fs.mkdirSync(savePath, { recursive: true });
@@ -150,6 +163,7 @@ ipcMain.on('start-tracking', async (event, url) => {
 /**
  * Handles the 'stop-tracking' IPC event.
  * Clears polling interval and shuts down the WebDriver.
+ * Auto-saves the generated script.
  * 
  * @event ipcMain#stop-tracking
  * @returns {Promise<void>}
@@ -162,6 +176,9 @@ ipcMain.on('stop-tracking', async () => {
     await driver.quit();
   }
   mainWindow.webContents.send('save-complete', savePath);
+  
+  // Request the renderer to send the current script for auto-saving
+  mainWindow.webContents.send('request-auto-save');
 });
 
 /**
@@ -171,11 +188,13 @@ ipcMain.on('stop-tracking', async () => {
  * @event ipcMain#save-custom-script
  * @param {Event} event - The IPC event object
  * @param {string} scriptContent - The custom script content to save
+ * @param {boolean} [isAutoSave=false] - Whether this is an automatic save
  */
-ipcMain.on('save-custom-script', async (event, scriptContent) => {
+ipcMain.on('save-custom-script', async (event, scriptContent, isAutoSave = false) => {
   try {
     const timestamp = new Date().toISOString().replace(/:/g, '_');
-    const scriptPath = path.join(savePath || path.join(__dirname, 'scripts'), `robot_script_${timestamp}.robot`);
+    const prefix = isAutoSave ? 'auto_' : '';
+    const scriptPath = path.join(savePath || path.join(__dirname, 'scripts'), `${prefix}robot_script_${timestamp}.robot`);
     
     // Ensure the directory exists
     const scriptDir = path.dirname(scriptPath);
@@ -184,12 +203,46 @@ ipcMain.on('save-custom-script', async (event, scriptContent) => {
     // Write the script to file
     fs.writeFileSync(scriptPath, scriptContent, 'utf-8');
     
-    // Notify the renderer process
-    mainWindow.webContents.send('script-saved', scriptPath);
+    // Notify the renderer process with the appropriate event
+    const eventName = isAutoSave ? 'script-auto-saved' : 'script-saved';
+    mainWindow.webContents.send(eventName, scriptPath);
   } catch (err) {
-    console.error('Error saving custom script:', err);
+    console.error('Error saving script:', err);
     mainWindow.webContents.send('script-save-error', err.message);
   }
+});
+
+/**
+ * Handles the 'clear-session' IPC event.
+ * Resets session variables and cleans up resources.
+ * 
+ * @event ipcMain#clear-session
+ * @returns {Promise<void>}
+ */
+ipcMain.on('clear-session', async () => {
+  // Clear action counter
+  actionCounter = 0;
+  
+  // If WebDriver is still active, quit it
+  if (driver) {
+    try {
+      await driver.quit();
+      driver = null;
+    } catch (error) {
+      console.error('Error closing WebDriver session:', error);
+    }
+  }
+  
+  // Clear polling interval
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+  
+  // Clear save path (will be regenerated on next start-tracking)
+  savePath = null;
+  
+  console.log('Session cleared successfully');
 });
 
 /**

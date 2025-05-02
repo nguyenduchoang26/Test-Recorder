@@ -19,6 +19,7 @@ const robotOutput = document.getElementById('robot-output');
 const editBtn = document.getElementById('edit-script-btn');
 const saveScriptBtn = document.getElementById('save-script-btn');
 const scriptEditor = document.getElementById('robot-editor');
+const newSessionBtn = document.getElementById('new-session-btn');
 let isEditing = false;
 let originalScript = '';
 
@@ -68,6 +69,8 @@ stopBtn.addEventListener('click', () => {
   
   // Clear the editor and update with generated script
   scriptEditor.value = originalScript;
+  
+  // Note: We don't need to explicitly save here since the main process will request it
 });
 
 /**
@@ -81,36 +84,79 @@ editBtn.addEventListener('click', () => {
     // Switch to edit mode
     robotOutput.style.display = 'none';
     scriptEditor.style.display = 'block';
-    saveScriptBtn.style.display = 'inline-block';
     scriptEditor.value = robotOutput.textContent;
     editBtn.textContent = 'Cancel Editing';
   } else {
     // Switch back to view mode
     robotOutput.style.display = 'block';
     scriptEditor.style.display = 'none';
-    saveScriptBtn.style.display = 'none';
     editBtn.textContent = 'Edit Script';
   }
 });
 
 /**
  * Handle Save Script button click:
- * - Update the displayed script with custom edits
- * - Save the custom script to disk
+ * - Update the displayed script with custom edits if in edit mode
+ * - Save the script to disk
  */
 saveScriptBtn.addEventListener('click', () => {
-  const customScript = scriptEditor.value;
-  robotOutput.textContent = customScript;
+  // If in edit mode, update the script content from editor
+  if (isEditing) {
+    const customScript = scriptEditor.value;
+    robotOutput.textContent = customScript;
+    originalScript = customScript;
+  }
   
-  // Save the custom script to disk
-  ipcRenderer.send('save-custom-script', customScript);
+  // Save the script to disk (either custom edited or auto-generated)
+  ipcRenderer.send('save-custom-script', robotOutput.textContent);
+});
+
+/**
+ * Handle New Session button click:
+ * - Clear interaction data and UI elements
+ * - Reset button states
+ * - Reset script output
+ */
+newSessionBtn.addEventListener('click', () => {
+  // Ask for confirmation before clearing
+  if (interactionsData.length > 0 && !confirm('This will clear all current session data. Continue?')) {
+    return;
+  }
   
-  // Return to view mode
-  robotOutput.style.display = 'block';
-  scriptEditor.style.display = 'none';
-  saveScriptBtn.style.display = 'none';
-  isEditing = false;
-  editBtn.textContent = 'Edit Script';
+  // Clear interaction data
+  interactionsData = [];
+  
+  // Clear DOM elements
+  interactionsList.innerHTML = '';
+  robotOutput.textContent = '';
+  scriptEditor.value = '';
+  
+  // Clear any existing success/info messages
+  // Bug fix: Only remove message divs, not the control buttons
+  const messages = document.querySelectorAll('#controls > div:not(.button-group), #script-controls > .success-message');
+  messages.forEach(msg => msg.remove());
+  
+  // Reset UI state
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  editBtn.disabled = true;
+  
+  // Reset editor state
+  if (isEditing) {
+    robotOutput.style.display = 'block';
+    scriptEditor.style.display = 'none';
+    isEditing = false;
+    editBtn.textContent = 'Edit Script';
+  }
+  
+  // Signal to main process to clear any session data
+  ipcRenderer.send('clear-session');
+  
+  // Visual feedback
+  newSessionBtn.classList.add('highlight-button');
+  setTimeout(() => {
+    newSessionBtn.classList.remove('highlight-button');
+  }, 2000);
 });
 
 /**
@@ -173,7 +219,17 @@ ipcRenderer.on('save-complete', (event, savePath) => {
   const msgDiv = document.createElement('div');
   msgDiv.textContent = `Saved interactions to: ${savePath}`;
   msgDiv.style.marginTop = '10px';
-  document.getElementById('controls').appendChild(msgDiv);
+  
+  // Fix: Create a messages container if it doesn't exist
+  let messagesContainer = document.getElementById('messages-container');
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.id = 'messages-container';
+    document.getElementById('controls').appendChild(messagesContainer);
+  }
+  
+  // Append message to the messages container instead of controls directly
+  messagesContainer.appendChild(msgDiv);
 });
 
 /**
@@ -185,6 +241,43 @@ ipcRenderer.on('script-saved', (event, filePath) => {
   msgDiv.style.marginTop = '10px';
   msgDiv.className = 'success-message';
   document.getElementById('script-controls').appendChild(msgDiv);
+  
+  // Remove the message after 5 seconds
+  setTimeout(() => {
+    if (msgDiv.parentNode) {
+      msgDiv.parentNode.removeChild(msgDiv);
+    }
+  }, 5000);
+});
+
+/**
+ * Listen for auto-save requests from main process
+ * Sends the current script content for automatic saving
+ */
+ipcRenderer.on('request-auto-save', () => {
+  // Send the current script content to be auto-saved
+  // The third parameter (true) indicates this is an auto-save
+  ipcRenderer.send('save-custom-script', robotOutput.textContent, true);
+});
+
+/**
+ * Receive confirmation that a script was auto-saved
+ */
+ipcRenderer.on('script-auto-saved', (event, filePath) => {
+  const msgDiv = document.createElement('div');
+  msgDiv.textContent = `Script auto-saved to: ${filePath}`;
+  msgDiv.style.marginTop = '10px';
+  msgDiv.className = 'info-message';
+  
+  // Fix: Create a messages container if it doesn't exist
+  let messagesContainer = document.getElementById('messages-container');
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.id = 'messages-container';
+    document.getElementById('controls').appendChild(messagesContainer);
+  }
+  
+  messagesContainer.appendChild(msgDiv);
   
   // Remove the message after 5 seconds
   setTimeout(() => {
