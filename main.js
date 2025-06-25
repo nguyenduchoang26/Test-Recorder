@@ -53,6 +53,7 @@ function createWindow() {
     }
   });
   mainWindow.loadFile('index.html');
+  mainWindow.webContents.openDevTools();
 }
 
 // Initialize the application window when Electron is ready
@@ -92,26 +93,30 @@ ipcMain.on('start-tracking', async (event, url) => {
   await driver.executeScript(function() {
     window.interactions = [];
     function recordEvent(e) {
-      try {
-        var info = {
-          type: e.type,
-          selector: e.target.tagName + (e.target.id ? '#' + e.target.id : '') + (e.target.className ? '.' + e.target.className.split(' ').join('.') : ''),
-          text: e.target.innerText || null,
-          value: e.target.value || null,
-          timestamp: new Date().toISOString(),
-          rect: e.target.getBoundingClientRect()
-        };
-        window.interactions.push(info);
-      } catch (err) {}
-    }
-    ['click', 'input'].forEach(function(ev) {
-      document.addEventListener(ev, recordEvent, true);
+        try {
+          var info = {
+            type: e.type,
+            selector: e.target.tagName + (e.target.id ? '#' + e.target.id : '') + (e.target.className ? '.' + e.target.className.split(' ').join('.') : ''),
+            text: e.target.innerText || null,
+            value: e.target.value || null,
+            timestamp: new Date().toISOString(),
+            rect: e.target.getBoundingClientRect()
+          };
+          window.interactions.push(info);
+          console.log('Recorded event:', info);
+        } catch (err) {}
+      }
+      ['click', 'input'].forEach(function(ev) {
+        document.addEventListener(ev, recordEvent, true);
+      });
+      window.addEventListener('scroll', recordEvent, true);
     });
-    window.addEventListener('scroll', recordEvent, true);
-  });
-  pollInterval = setInterval(async () => {
+    pollInterval = setInterval(async () => {
     try {
       const interactions = await driver.executeScript(`
+        if (!window.interactions || !Array.isArray(window.interactions)) {
+          window.interactions = [];
+        }
         const events = window.interactions.slice();
         window.interactions = [];
         return events;
@@ -157,7 +162,7 @@ ipcMain.on('start-tracking', async (event, url) => {
     } catch (err) {
       console.error(err);
     }
-  }, 10);
+  }, 20);
 });
 
 /**
